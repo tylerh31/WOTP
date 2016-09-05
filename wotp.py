@@ -12,13 +12,6 @@ sys.setdefaultencoding('utf8')
 
 links = []
 match_threads = []
-team_1_starters = []
-team_2_starters = []
-team_1_subs = []
-team_2_subs = []
-team_1_subbed_in = []
-team_2_subbed_in = []
-
 match_links = []
 
 ## TODO: Create method for red card and remove from list "/red"
@@ -28,6 +21,12 @@ match_links = []
 ## TODO: If player name = 3 grab last 2 not just first one. (dos Santos)
 
 def get_individual_match_thread(url):
+    team_1_starters = []
+    team_2_starters = []
+    team_1_subs = []
+    team_2_subs = []
+    team_1_subbed_in = []
+    team_2_subbed_in = []
 
     opener = urllib2.build_opener()
     opener.addheaders = [('User-agent', 'Mozilla/5.0')]
@@ -36,11 +35,16 @@ def get_individual_match_thread(url):
     req = urllib2.Request(url, headers={ 'User-Agent': 'Mozilla/5.0' })
     html = urllib2.urlopen(req).read()
 
-    team_1_starters_subs = get_team_1_name_starters_subs(html)
-
-    team_2_starters_subs = get_team_2_name_starters_subs(html)
-
-    match_subs = get_match_subs(html)
+    # MLS and soccer subreddits have different formatting, check to see which link this one is
+    if ('/MLS/' in url):
+        team_1_starters_subs = get_team_1_name_starters_subs_MLS(html)
+        team_2_starters_subs = get_team_2_name_starters_subs_MLS(html)
+        match_subs = get_match_subs_MLS(html)
+    # If its not MLS its soccer, this is handled in get_raw_match_links
+    else:
+        team_1_starters_subs = get_team_1_name_starters_subs(html)
+        team_2_starters_subs = get_team_2_name_starters_subs(html)
+        match_subs = get_match_subs(html)
 
     team1 = team_1_starters_subs[0]
     startersteam1 = team_1_starters_subs[1].split(',')
@@ -50,7 +54,7 @@ def get_individual_match_thread(url):
     startersteam2 = team_2_starters_subs[1].split(',')
     substeam2 = team_2_starters_subs[2].split(',')
 
-    print team1[1:], 'vs.', team2[1:]
+    print team1, 'vs.', team2
 
     process_team_starters(startersteam2, team_2_starters)
 
@@ -109,10 +113,9 @@ def get_individual_match_thread(url):
     team_1_players_on_pitch = team_1_starters + team_1_subbed_in
     team_2_players_on_pitch = team_2_starters + team_2_subbed_in
 
-    print team1[1:], team_1_players_on_pitch
-    print team2[1:], team_2_players_on_pitch
+    print team1, ':', team_1_players_on_pitch
+    print team2, ':', team_2_players_on_pitch
 
-    #print soup
 def get_team_1_name_starters_subs(html):
     result = re.search('.*<p><a href="#icon-notes-big"></a> <strong>LINE-UPS</strong></p>\s+<p><strong><a href="#\S+"></a>(.*?)</strong></p>\s+<p>(.*?).</p>\s+<p><strong>Subs:</strong>(.*?).</p>', html, re.DOTALL).groups()
     return result
@@ -122,6 +125,18 @@ def get_team_2_name_starters_subs(html):
 
 def get_match_subs(html):
     result = re.findall('<a href="#icon-sub"></a> Substitution: <a href="#icon-down"></a>(.*?)<a href="#icon-up"></a>(.*?)</p>', html, re.DOTALL)
+    return result
+
+def get_team_1_name_starters_subs_MLS(html):
+    result = re.search('.*<p><strong>LINE-UPS</strong></p>\s+<p><strong>(.*?)</strong></p>\s+<p>(.*?).</p>\s+<p><strong>Subs:</strong>(.*?).</p>', html, re.DOTALL).groups()
+    return result
+
+def get_team_2_name_starters_subs_MLS(html):
+    result = re.search('<p><sup>.*</sup></p>\s+<p><strong>(.*?)</strong></p>\s+<p>(.*?).</p>\s+<p><strong>Subs:</strong>(.*?).</p>', html, re.DOTALL).groups()
+    return result
+
+def get_match_subs_MLS(html):
+    result = re.findall('<a href="/sub-off"></a>(.*?)<a href="/sub-on"></a>(.*?)</p>', html, re.DOTALL)
     return result
 
 def process_team_starters(unprocessed_list, processed_list):
@@ -149,7 +164,8 @@ def get_raw_match_links():
     for link in soup.find_all('a', class_="bylink comments may-blank"):
         href_pattern = re.compile(ur'.*href="(.*?)/".*')
         comments_link = re.search(href_pattern, str(link)).groups()
-        match_links.append(comments_link[0])
+        if('/MLS/' in comments_link[0]) or ('/soccer/' in comments_link[0]):
+            match_links.append(comments_link[0])
 
 def prompt_user_for_game_link(match_links):
     i = 0
@@ -158,7 +174,13 @@ def prompt_user_for_game_link(match_links):
         processed_match_link = parse_match_link(match_link)
         print i, ':', processed_match_link[0]
         i += 1
-    desired_match_link = input("Choose your game: ")
+
+    desired_match_link = input("Choose the game you would like to see: ")
+
+    if (desired_match_link not in range(len(match_links))):
+        print 'The game you have selected in not in the range of acceptable values, please try again'
+        prompt_user_for_game_link(match_links)
+
     return desired_match_link
 
 def parse_match_link(match_link):
