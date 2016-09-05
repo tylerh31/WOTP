@@ -20,7 +20,8 @@ match_links = []
 
 ## TODO: If player name = 3 grab last 2 not just first one. (dos Santos)
 
-def get_individual_match_thread(url):
+# Take url of requested match and extract info (subs/on the pitch)
+def match_thread_info(url):
     team_1_starters = []
     team_2_starters = []
     team_1_subs = []
@@ -47,52 +48,66 @@ def get_individual_match_thread(url):
         match_subs = get_match_subs(html)
 
     team1 = team_1_starters_subs[0]
-    startersteam1 = team_1_starters_subs[1].split(',')
-    substeam1 = team_1_starters_subs[2].split(',')
+    starters_team_1 = team_1_starters_subs[1].split(',')
+    subs_team_1 = team_1_starters_subs[2].split(',')
 
     team2 = team_2_starters_subs[0]
-    startersteam2 = team_2_starters_subs[1].split(',')
-    substeam2 = team_2_starters_subs[2].split(',')
+    starters_team_2 = team_2_starters_subs[1].split(',')
+    subs_team_2 = team_2_starters_subs[2].split(',')
+
+    process_team_starters(starters_team_2, team_2_starters)
+
+    process_team_starters(starters_team_1, team_1_starters)
+
+    process_team_subs(subs_team_1, team_1_subs)
+
+    process_team_subs(subs_team_2, team_2_subs)
 
     print team1, 'vs.', team2
 
-    process_team_starters(startersteam2, team_2_starters)
-
-    process_team_starters(startersteam1, team_1_starters)
-
-    process_team_subs(substeam1, team_1_subs)
-
-    process_team_subs(substeam2, team_2_subs)
-
     for sub in match_subs:
         subOut = sub[0].split(' ')
+        # remove empty indexes in subOut
         subOut = filter(None, subOut)
-        if(len(subOut) != 2):
+        # for players who only have 1 name (e.g. Kaka)
+        if(len(subOut) == 1):
             subOutName = remove_accents(subOut[0])
         elif(len(subOut) == 2):
             subOutName = remove_accents(subOut[1])
+        else:
+            subOutName = remove_accents(subOut[2])
 
         subIn = sub[1].split(' ')
+        # remove empty indexes in subIn
         subIn = filter(None, subIn)
-        if(len(subIn) != 2):
+        # for players who only have 1 name (e.g. Kaka)
+        if(len(subIn) == 1):
             subInName = remove_accents(subIn[0])
         elif(len(subIn) == 2):
             subInName = remove_accents(subIn[1])
+        else:
+            subInName = remove_accents(subIn[2])
 
         print 'Off:', subOutName, 'On:', subInName
 
         i = 0
         j = 0
 
+        # buggy with players having more than 2 names.
+
         for starter in team_1_starters:
             starter = starter.strip()
             starter = starter.split(' ')
-            if(len(starter) != 2):
+            if(len(starter) == 1):
                 if(subOutName == starter[0]):
                     del team_1_starters[i]
                     team_1_subbed_in.append(subInName)
             elif(len(starter) == 2):
                 if(subOutName == starter[1]):
+                    del team_1_starters[i]
+                    team_1_subbed_in.append(subInName)
+            else:
+                if(subOutName == starter[2]):
                     del team_1_starters[i]
                     team_1_subbed_in.append(subInName)
             i += 1
@@ -100,12 +115,17 @@ def get_individual_match_thread(url):
         for starter in team_2_starters:
             starter = starter.strip()
             starter = starter.split(' ')
-            if(len(starter) != 2):
+            if(len(starter) == 1):
                 if(subOutName == starter[0]):
                     del team_2_starters[j]
                     team_2_subbed_in.append(subInName)
             elif(len(starter) == 2):
                 if(subOutName == starter[1]):
+                    del team_2_starters[j]
+                    team_2_subbed_in.append(subInName)
+                    print subOutName
+            else:
+                if(subOutName == starter[2]):
                     del team_2_starters[j]
                     team_2_subbed_in.append(subInName)
             j += 1
@@ -194,5 +214,5 @@ def remove_accents(input_str):
 
 get_raw_match_links()
 thread = prompt_user_for_game_link(match_links)
-get_individual_match_thread(match_links[thread])
+match_thread_info(match_links[thread])
 
