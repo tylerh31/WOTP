@@ -19,10 +19,8 @@ This script **_currently_**:
 
 ## Requirements:
 
-* bs4
-* urllib2
-* re
-* unicodedata
+* beautifulsoup4
+* unidecode
 
 ## Installation:
 
