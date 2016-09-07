@@ -33,13 +33,6 @@ def match_thread_info(url):
 
     html = html.text
 
-    # opener = urllib2.build_opener()
-    # opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-    # response = opener.open(url)
-
-    # req = urllib2.Request(url, headers={ 'User-Agent': 'Mozilla/5.0' })
-    # html = urllib2.urlopen(req).read()
-
     # MLS and soccer subreddits have different formatting, check to see which link this one is
     if ('/MLS/' in url):
         team_1_starters_subs = get_team_1_name_starters_subs_MLS(html)
@@ -98,22 +91,17 @@ def match_thread_info(url):
 
         for starter in team_1_starters:
             starter = starter.strip()
-            starter = starter.split(' ')
             if(subOutName in starter):
                 team_1_subbed_out.append(starter)
 
         for starter in team_2_starters:
             starter = starter.strip()
-            starter = starter.split(' ')
             if(subOutName in starter):
                 team_2_subbed_out.append(starter)
 
-    for starter in team_1_starters:
-        a = [sub for sub in team_1_subbed_out if starter in team_1_subbed_out]
-
-    print(a)
-    exit()
-    print (team_1_starters, team_1_subbed_out)
+    a = (set(team_1_starters) - set(team_1_subbed_out))
+    b = (set(team_2_starters) - set(team_2_subbed_out))
+    print (a, b)
 
     exit()
 
@@ -154,12 +142,6 @@ def process_team_subs(unprocessed_list, processed_list):
         processed_list.append(sub)
 
 def get_raw_match_links():
-    # opener = urllib2.build_opener()
-    # opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-    # response = opener.open("http://www.reddit.com/u/MatchThreadder/?limit=50")
-
-    # req = urllib2.Request("http://www.reddit.com/u/MatchThreadder/?limit=50", headers={ 'User-Agent': 'Mozilla/5.0' })
-    # html = urllib2.urlopen(req).read()
 
     headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
     html = requests.get("http://www.reddit.com/u/MatchThreadder/?limit=50", headers=headers)
